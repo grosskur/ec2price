@@ -1,0 +1,4 @@
+botocore
+psycopg2
+simplejson
+tornado

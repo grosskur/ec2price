@@ -1,0 +1,6 @@
+*.pyc
+.env
+.envdir
+.venv
+.vagrant
+*.bak*

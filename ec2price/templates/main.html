@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+  <h4 class="muted"><a href="/">EC2 Spot Instance Prices</a></h4>
+  <ul class="nav nav-pills">
+    <li class="dropdown">
+      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+          {{ instance_type }}
+          <b class="caret"></b>
+      </a>
+      <ul class="dropdown-menu">
+      {% for i in instance_types %}
+        <li><a tabindex="-1" href="/?type={{ i }}&region={{ region }}&window={{ window }}">{{ i }}</a></li>
+      {% end %}
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+          {{ region }}
+          <b class="caret"></b>
+      </a>
+      <ul class="dropdown-menu">
+      {% for i in regions %}
+        <li><a tabindex="-1" href="/?type={{ instance_type }}&region={{ i }}&window={{ window }}">{{ i }}</a></li>
+      {% end %}
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+          {{ window }} day{% if window > 1 %}s{% end %}
+          <b class="caret"></b>
+      </a>
+      <ul class="dropdown-menu">
+      {% for i in windows %}
+        <li><a tabindex="-1" href="/?type={{ instance_type }}&region={{ region }}&window={{ i }}">{{ i }} day{% if i > 1 %}s{% end %}</a></li>
+      {% end %}
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<div class="container">
+  <div id="chart">
+    <svg style="height:500px"></svg>
+  </div>
+</div>
+
+{% end %}
+
+{% block scripts %}
+
+<!-- <script src="{{ static_url("js/iso8601.js") }}"></script> -->
+<script>
+function prices() {
+  var result = [];
+  $.each({{ data }}, function (api_name, i) {
+    //console.log(api_name);
+    //console.log(i);
+    var values = [];
+    $.each(i, function (index, j) {
+      values.push({x: Date.parse(j[0]), y: j[1]});
+    });
+    result.push({
+      values: values,
+      key: api_name,
+    });
+  });
+  return result;
+}
+</script>
+<script src="{{ static_url("js/main.js") }}"></script>
+
+{% end %}
