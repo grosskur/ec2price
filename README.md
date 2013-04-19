@@ -9,7 +9,7 @@ over time. It's written in [Python](http://www.python.org/) using the
 `ec2price web` displays graphs of the data using
 [NVD3.js](http://nvd3.org/).
 
-## Instructions
+## Instructions for running on Heroku
 
 ```bash
 $ git clone https://github.com/grosskur/ec2price.git
@@ -17,13 +17,18 @@ $ cd ec2price
 $ heroku create your-ec2price
 $ heroku addons:add heroku-postgresql:dev
 $ heroku pg:promote $(heroku config -s | awk -F= '$1 ~ /^HEROKU_POSTGRESQL_[A-Z]+_URL$/ {print $1}')
-$ heroku config:set SECRET_KEY=$(python -c "import base64, uuid; print base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)")
+$ heroku config:set COOKIE_SECRET=$(python -c "import base64, uuid; print base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)")
 $ heroku config:set AWS_ACCESS_KEY_ID=...
 $ heroku config:set AWS_SECRET_ACCESS_KEY=...
-$ heroku run psql -f ec2price/sql/schema.sql
-$ heroku run psql -f ec2price/sql/initial.sql
+$ heroku pg:psql < ec2price/sql/schema.sql
+$ heroku pg:psql < ec2price/sql/initial.sql
 $ git push heroku master
+$ heroku run env HOURS=24 scripts/ec2price collector
+$ heroku addons:add scheduler:standard
 ```
+
+Then go to the Heroku dashboard and add a scheduled job to run
+`scripts/ec2price collector` every 10 minutes.
 
 ## To do
 
