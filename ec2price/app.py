@@ -70,6 +70,7 @@ def main(args):
         address = os.getenv('ADDRESS', '')
         cookie_secret = os.getenv('COOKIE_SECRET')
         database_url = os.getenv('DATABASE_URL')
+        gauges_site_id = os.getenv('GAUGES_SITE_ID')
 
         database_dsn = None
         if database_url:
@@ -86,7 +87,10 @@ def main(args):
 
         db_conn = _get_db_conn(database_dsn)
 
-        params = {'db_conn': db_conn}
+        params = {
+            'db_conn': db_conn,
+            'gauges_site_id': gauges_site_id,
+        }
         handlers = [
             (r'/', MainHandler, params),
         ]
@@ -97,6 +101,7 @@ def main(args):
         address = os.getenv('ADDRESS', '')
         cookie_secret = os.getenv('COOKIE_SECRET')
         database_url = os.getenv('DATABASE_URL')
+        gauges_site_id = os.getenv('GAUGES_SITE_ID')
 
         database_dsn = None
         if database_url:
@@ -113,7 +118,10 @@ def main(args):
 
         db_conn = _get_db_conn(database_dsn)
 
-        params = {'db_conn': db_conn}
+        params = {
+            'db_conn': db_conn,
+            'gauges_site_id': gauges_site_id,
+        }
         handlers = [
             (r'/', MainHandler, params),
         ]

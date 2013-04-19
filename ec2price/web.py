@@ -30,8 +30,9 @@ order by api_name
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, db_conn):
+    def initialize(self, db_conn, gauges_site_id):
         self._conn = db_conn
+        self._gauges_site_id = gauges_site_id
 
 
 class MainHandler(BaseHandler):
@@ -68,6 +69,7 @@ class MainHandler(BaseHandler):
         windows = [1, 3, 8, 15, 30, 60]
 
         self.render('main.html',
+                    gauges_site_id=self._gauges_site_id,
                     data=data,
                     instance_type=instance_type,
                     instance_types=instance_types,

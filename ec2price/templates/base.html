@@ -18,6 +18,21 @@
     <script src="{{ static_url("vendor/bootstrap-2.3.0/js/bootstrap.js") }}"></script>
     <script src="{{ static_url("vendor/d3-3.0.6/js/d3.js") }}"></script>
     <script src="{{ static_url("vendor/nvd3-0.0.1a/js/nv.d3.js") }}"></script>
+    {% if gauges_site_id is not None %}
+    <script type="text/javascript">
+      var _gauges = _gauges || [];
+      (function() {
+        var t   = document.createElement('script');
+        t.type  = 'text/javascript';
+        t.async = true;
+        t.id    = 'gauges-tracker';
+        t.setAttribute('data-site-id', '{{ gauges_site_id }}');
+        t.src = '//secure.gaug.es/track.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(t, s);
+      })();
+    </script>
+    {% end %}
     {% block scripts %}
     {% end %}
   </body>
