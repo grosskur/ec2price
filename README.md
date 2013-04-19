@@ -5,9 +5,9 @@ over time. It's written in [Python](http://www.python.org/) using the
 [Tornado](http://www.tornadoweb.org/) web framework. A periodic task
 (`ec2price collector`) grabs spot price data from the EC2 API using
 [botocore](https://github.com/boto/botocore) and stores it in a
-[postgres](http://www.postgresql.org/) database. The web interface
+[Postgres](http://www.postgresql.org/) database. The web interface
 (`ec2price web`) displays graphs of the data using
-[nvd3](http://nvd3.org/).
+[NVD3.js](http://nvd3.org/).
 
 ## Instructions
 
@@ -18,7 +18,8 @@ $ heroku create your-ec2price
 $ heroku addons:add heroku-postgresql:dev
 $ heroku pg:promote $(heroku config -s | awk -F= '$1 ~ /^HEROKU_POSTGRESQL_[A-Z]+_URL$/ {print $1}')
 $ heroku config:set SECRET_KEY=$(python -c "import base64, uuid; print base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)")
-$ heroku config:set AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
+$ heroku config:set AWS_ACCESS_KEY_ID=...
+$ heroku config:set AWS_SECRET_ACCESS_KEY=...
 $ heroku run psql -f ec2price/sql/schema.sql
 $ heroku run psql -f ec2price/sql/initial.sql
 $ git push heroku master
