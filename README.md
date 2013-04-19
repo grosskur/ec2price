@@ -3,10 +3,10 @@
 This application collects and displays prices for EC2 spot instances
 over time. It's written in [Python](http://www.python.org/) using the
 [Tornado](http://www.tornadoweb.org/) web framework. A periodic task
-(`ec2price collector`) grabs spot price data from the EC2 API using
+`ec2price collector` grabs spot price data from the EC2 API using
 [botocore](https://github.com/boto/botocore) and stores it in a
 [Postgres](http://www.postgresql.org/) database. The web interface
-(`ec2price web`) displays graphs of the data using
+`ec2price web` displays graphs of the data using
 [NVD3.js](http://nvd3.org/).
 
 ## Instructions
