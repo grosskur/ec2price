@@ -17,8 +17,8 @@ $ cd ec2price
 $ heroku create your-ec2price
 $ heroku addons:add heroku-postgresql:dev
 $ heroku pg:promote $(heroku config -s | awk -F= '$1 ~ /^HEROKU_POSTGRESQL_[A-Z]+_URL$/ {print $1}')
-$ heroku config set SECRET_KEY=$(python -c "import base64, uuid; print base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)")
-$ heroku config set AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
+$ heroku config:set SECRET_KEY=$(python -c "import base64, uuid; print base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)")
+$ heroku config:set AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
 $ heroku run psql -f ec2price/sql/schema.sql
 $ heroku run psql -f ec2price/sql/initial.sql
 $ git push heroku master
