@@ -7,7 +7,7 @@ over time. It's written in [Python](http://www.python.org/) using the
 [botocore](https://github.com/boto/botocore) and stores it in a
 [postgres](http://www.postgresql.org/) database. The web interface
 (`ec2price web`) displays graphs of the data using
-(nvd3)[http://nvd3.org/].
+[nvd3](http://nvd3.org/).
 
 ## Instructions
 
