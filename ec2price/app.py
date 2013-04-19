@@ -27,6 +27,7 @@ DATABASE_URL_REGEX = re.compile(
     '/(?P<dbname>.+)'
 )
 DATABASE_URL_EXAMPLE = 'postgres://username:password@host:port/dbname'
+_HOURS = 8
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -119,6 +120,7 @@ def main(args):
         _start_tornado_app(debug, cookie_secret, port, address, handlers)
     elif opts.cmd == 'collector':
         database_url = os.getenv('DATABASE_URL')
+        hours = os.getenv('HOURS')
 
         database_dsn = None
         if database_url:
@@ -131,9 +133,16 @@ def main(args):
         if not database_url:
             parser.error('DATABASE_URL is required')
 
+        if not hours:
+            hours = _HOURS
+        try:
+            hours = int(hours)
+        except ValueError:
+            parser.error('HOURS must be an integer')
+
         db_conn = _get_db_conn(database_dsn)
 
-        collect(db_conn)
+        collect(db_conn, hours)
     return 0
 
 

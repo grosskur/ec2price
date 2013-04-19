@@ -9,7 +9,6 @@ import logging
 import uuid
 
 
-_HOURS = 8
 _FMT = '%Y-%m-%dT%H:%M:%S.000Z'
 
 _SELECT_SPOT_PRICE = """
@@ -39,12 +38,12 @@ logging.getLogger('botocore').setLevel(logging.WARN)
 logging.getLogger('requests.packages.urllib3').setLevel(logging.WARN)
 
 
-def collect(db_conn):
+def collect(db_conn, hours):
     session = botocore.session.get_session()
     ec2 = session.get_service('ec2')
     operation = ec2.get_operation('DescribeSpotPriceHistory')
 
-    d = datetime.datetime.utcnow() - datetime.timedelta(hours=_HOURS)
+    d = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
     start_time = d.strftime(_FMT)
 
     with contextlib.closing(db_conn.cursor()) as cursor:
