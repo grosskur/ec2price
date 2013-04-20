@@ -34,3 +34,8 @@ Then go to the Heroku dashboard and add a scheduled job to run
 
 * Experiment with Rickshaw for graph drawing
  * Use D3 option `interpolation: 'step-after'` for staircase lines
+
+## See also
+
+* [cloud exchange](http://cloudexchange.org/)
+* [EC2Instances.info](http://ec2instances.info/)
