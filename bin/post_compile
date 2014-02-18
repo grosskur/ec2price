@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# fail fast
+set -o errexit
+set -o nounset
+set -o pipefail
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+exec webassets -c webassets.yml build 2>&1 | indent
