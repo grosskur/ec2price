@@ -22,7 +22,9 @@ $ heroku config:set COOKIE_SECRET=$(head /dev/urandom | base64 | cut -c 1-40)
 $ heroku config:set AWS_ACCESS_KEY_ID=...
 $ heroku config:set AWS_SECRET_ACCESS_KEY=...
 $ git push heroku master
-$ heroku ps:scale web=1 collector=1
+$ heroku ps:scale web=1
+$ heroku addons:add scheduler
+$ heroku addons:open scheduler  # Add hourly job to run "scripts/ec2price collector"
 ```
 
 ## To do
