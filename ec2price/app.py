@@ -6,13 +6,13 @@ import logging
 import os
 import re
 
-import psycopg2
-import psycopg2.extras
 import tornado.ioloop
 import tornado.web
+import webassets.loaders
 
 from .web import MainHandler
 from .collector import collect
+from .model import Model
 
 
 PROG = 'ec2price'
@@ -26,8 +26,7 @@ DATABASE_URL_REGEX = re.compile(
     ':(?P<port>\d+)'
     '/(?P<dbname>.+)'
 )
-DATABASE_URL_EXAMPLE = 'postgres://username:password@host:port/dbname'
-_HOURS = 8
+_HOURS = 1
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -56,9 +55,6 @@ def main(args):
     p_web = subparsers.add_parser('web', help='web app')
     p_web.set_defaults(cmd='web')
 
-    p_api = subparsers.add_parser('api', help='web API')
-    p_api.set_defaults(cmd='api')
-
     p_collector = subparsers.add_parser('collector', help='collector')
     p_collector.set_defaults(cmd='collector')
 
@@ -69,57 +65,21 @@ def main(args):
         port = int(os.getenv('PORT', 8080))
         address = os.getenv('ADDRESS', '')
         cookie_secret = os.getenv('COOKIE_SECRET')
-        database_url = os.getenv('DATABASE_URL')
+        table_prefix = os.getenv('TABLE_PREFIX')
         gauges_site_id = os.getenv('GAUGES_SITE_ID')
 
-        database_dsn = None
-        if database_url:
-            m = DATABASE_URL_REGEX.match(database_url)
-            if not m:
-                parser.error('must be of form %s' % DATABASE_URL_EXAMPLE)
-            database_dsn = ' '.join('%s=%s' % (k, v)
-                                    for k, v in m.groupdict().items())
-
-        if not database_url:
-            parser.error('DATABASE_URL is required')
+        if not table_prefix:
+            parser.error('TABLE_PREFIX is required')
         if not cookie_secret:
             parser.error('COOKIE_SECRET is required')
 
-        db_conn = _get_db_conn(database_dsn)
+        asset_loader = webassets.loaders.YAMLLoader('webassets.yml')
+        asset_env = asset_loader.load_environment()
+        asset_env.debug = debug
 
         params = {
-            'db_conn': db_conn,
-            'gauges_site_id': gauges_site_id,
-        }
-        handlers = [
-            (r'/', MainHandler, params),
-        ]
-        _start_tornado_app(debug, cookie_secret, port, address, handlers)
-    elif opts.cmd == 'api':
-        debug = bool(os.getenv('DEBUG', False))
-        port = int(os.getenv('PORT', 8080))
-        address = os.getenv('ADDRESS', '')
-        cookie_secret = os.getenv('COOKIE_SECRET')
-        database_url = os.getenv('DATABASE_URL')
-        gauges_site_id = os.getenv('GAUGES_SITE_ID')
-
-        database_dsn = None
-        if database_url:
-            m = DATABASE_URL_REGEX.match(database_url)
-            if not m:
-                parser.error('must be of form %s' % DATABASE_URL_EXAMPLE)
-            database_dsn = ' '.join('%s=%s' % (k, v)
-                                    for k, v in m.groupdict().items())
-
-        if not database_url:
-            parser.error('DATABASE_URL is required')
-        if not cookie_secret:
-            parser.error('COOKIE_SECRET is required')
-
-        db_conn = _get_db_conn(database_dsn)
-
-        params = {
-            'db_conn': db_conn,
+            'model': Model(table_prefix),
+            'asset_env': asset_env,
             'gauges_site_id': gauges_site_id,
         }
         handlers = [
@@ -127,19 +87,11 @@ def main(args):
         ]
         _start_tornado_app(debug, cookie_secret, port, address, handlers)
     elif opts.cmd == 'collector':
-        database_url = os.getenv('DATABASE_URL')
+        table_prefix = os.getenv('TABLE_PREFIX')
         hours = os.getenv('HOURS')
 
-        database_dsn = None
-        if database_url:
-            m = DATABASE_URL_REGEX.match(database_url)
-            if not m:
-                parser.error('must be of form %s' % DATABASE_URL_EXAMPLE)
-            database_dsn = ' '.join('%s=%s' % (k, v)
-                                    for k, v in m.groupdict().items())
-
-        if not database_url:
-            parser.error('DATABASE_URL is required')
+        if not table_prefix:
+            parser.error('TABLE_PREFIX is required')
 
         if not hours:
             hours = _HOURS
@@ -148,9 +100,8 @@ def main(args):
         except ValueError:
             parser.error('HOURS must be an integer')
 
-        db_conn = _get_db_conn(database_dsn)
-
-        collect(db_conn, hours)
+        model = Model(table_prefix)
+        collect(model, hours)
     return 0
 
 
@@ -167,11 +118,3 @@ def _start_tornado_app(debug, cookie_secret, port, address, handlers):
     logging.info('listening on port: %d', port)
     app.listen(port, address)
     tornado.ioloop.IOLoop.instance().start()
-
-
-def _get_db_conn(database_dsn):
-    psycopg2.extras.register_uuid()
-    return psycopg2.connect(
-        database_dsn,
-        connection_factory=psycopg2.extras.RealDictConnection,
-    )

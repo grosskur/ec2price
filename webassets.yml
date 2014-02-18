@@ -1,0 +1,26 @@
+---
+directory: ec2price/static
+url: ../static
+auto_build: False
+cache: True
+manifest: json
+bundles:
+  js_app:
+    contents:
+    - vendor/jquery-1.11.0/js/jquery.js
+    - vendor/bootstrap-3.1.1/js/bootstrap.js
+    - vendor/d3-3.1.5/js/d3.v3.js
+    - vendor/nvd3-1.1.15-beta/js/nv.d3.js
+    filters:
+    - rjsmin
+    output: gen/js/app-%(version)s.js
+  css_screen:
+    contents:
+    - vendor/bootstrap-3.1.1/css/bootstrap.css
+    - vendor/bootstrap-3.1.1/css/bootstrap-theme.css
+    - vendor/nvd3-1.1.15-beta/css/nv.d3.css
+    - css/base.css
+    filters:
+    - cssmin
+    - cssrewrite
+    output: gen/css/screen-%(version)s.css

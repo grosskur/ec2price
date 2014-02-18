@@ -1,3 +1,4 @@
+{% autoescape None %}
 {% extends "base.html" %}
 
 {% block content %}
@@ -8,8 +9,19 @@
          src="{{ static_url("img/forkme_right_darkblue_121621.png") }}"
          alt="Fork me on GitHub">
   </a>
-  <h4 class="muted"><a href="/">EC2 Spot Instance Prices</a></h4>
-  <ul class="nav nav-pills">
+  <div class="header">
+    <ul class="nav nav-pills pull-right">
+    <li class="dropdown">
+      <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+          {{ product_description }}
+          <b class="caret"></b>
+      </a>
+      <ul class="dropdown-menu">
+      {% for i in product_descriptions %}
+        <li><a tabindex="-1" href="/?product={{ i }}&type={{ instance_type }}&region={{ region }}&window={{ window }}">{{ i }}</a></li>
+      {% end %}
+      </ul>
+    </li>
     <li class="dropdown">
       <a class="dropdown-toggle" data-toggle="dropdown" href="#">
           {{ instance_type }}
@@ -17,7 +29,7 @@
       </a>
       <ul class="dropdown-menu">
       {% for i in instance_types %}
-        <li><a tabindex="-1" href="/?type={{ i }}&region={{ region }}&window={{ window }}">{{ i }}</a></li>
+        <li><a tabindex="-1" href="/?product={{ product_description }}&type={{ i }}&region={{ region }}&window={{ window }}">{{ i }}</a></li>
       {% end %}
       </ul>
     </li>
@@ -28,7 +40,7 @@
       </a>
       <ul class="dropdown-menu">
       {% for i in regions %}
-        <li><a tabindex="-1" href="/?type={{ instance_type }}&region={{ i }}&window={{ window }}">{{ i }}</a></li>
+        <li><a tabindex="-1" href="/?product={{ product_description }}&type={{ instance_type }}&region={{ i }}&window={{ window }}">{{ i }}</a></li>
       {% end %}
       </ul>
     </li>
@@ -39,16 +51,18 @@
       </a>
       <ul class="dropdown-menu">
       {% for i in windows %}
-        <li><a tabindex="-1" href="/?type={{ instance_type }}&region={{ region }}&window={{ i }}">{{ i }} day{% if i > 1 %}s{% end %}</a></li>
+        <li><a tabindex="-1" href="/?product={{ product_description }}&type={{ instance_type }}&region={{ region }}&window={{ i }}">{{ i }} day{% if i > 1 %}s{% end %}</a></li>
       {% end %}
       </ul>
     </li>
-  </ul>
+    </ul>
+    <h3 class="brand"><a href="/">EC2 Spot Prices</a></h3>
+  </div>
 </div>
 
 <div class="container">
   <div id="chart">
-    <svg style="height:500px"></svg>
+    <svg style="height: 500px;"></svg>
   </div>
 </div>
 

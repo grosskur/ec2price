@@ -1,79 +1,82 @@
 """
 Web handlers
 """
-import contextlib
+import logging
 
+import arrow
 import tornado.web
 
 
-_FMT = '%Y-%m-%dT%H:%M:%SZ'
-_SELECT_PRICES = """
-select spot_prices.price, spot_prices.ts, availability_zones.api_name
-from spot_prices, availability_zones, instance_types
-where spot_prices.availability_zone_id = availability_zones.id
-  and availability_zones.api_name like %s
-  and spot_prices.instance_type_id = instance_types.id
-  and instance_types.api_name = %s
-  and spot_prices.ts > now() - interval %s
-order by ts;
-"""
-_SELECT_INSTANCE_TYPES = """
-select api_name
-from instance_types
-order by api_name
-"""
-_SELECT_AVAILABILITY_ZONES = """
-select api_name
-from availability_zones
-order by api_name
-"""
+_FMT = 'YYYY-MM-DDTHH:mm:ssZ'
+
+
+logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, db_conn, gauges_site_id):
-        self._conn = db_conn
+    def initialize(self, model, asset_env, gauges_site_id):
+        self._model = model
+        self._asset_env = asset_env
         self._gauges_site_id = gauges_site_id
 
 
 class MainHandler(BaseHandler):
     def get(self):
+        product_description = self.get_argument('product', 'Linux/UNIX')
         instance_type = self.get_argument('type', 't1.micro')
         region = self.get_argument('region', 'us-east-1')
         window = int(self.get_argument('window', 3))
 
-        with contextlib.closing(self._conn.cursor()) as cursor:
-            cursor.execute(_SELECT_PRICES, [region + '%', instance_type,
-                                            '{} days'.format(window)])
-            rows = cursor.fetchall()
+        logging.debug('window: past %s days', window)
+        timestamp = arrow.utcnow().replace(days=-window).timestamp
+        logging.debug('timestamp: %s', timestamp)
+
+        rows = self._model.instance_zones.query(
+            instance_id__eq=':'.join([
+                product_description,
+                instance_type,
+            ]),
+            zone__beginswith=region,
+        )
+        zones = [str(row['zone']) for row in rows]
 
         data = {}
-        for row in rows:
-            api_name = row['api_name']
-            if api_name not in data:
-                data[api_name] = []
-            data[api_name].append([
-                row['ts'].strftime(_FMT),
-                float(row['price']),
-            ])
+        for zone in zones:
+            rows = self._model.spot_prices.query(
+                instance_zone_id__eq=':'.join([
+                    product_description,
+                    instance_type,
+                    zone,
+                ]),
+                timestamp__gte=timestamp,
+            )
+            data[zone] = []
+            for row in rows:
+                data[zone].append([
+                    arrow.get(row['timestamp']).format(_FMT),
+                    float(row['price']),
+                ])
 
-        with contextlib.closing(self._conn.cursor()) as cursor:
-            cursor.execute(_SELECT_INSTANCE_TYPES)
-            rows = cursor.fetchall()
-        instance_types = [r['api_name'] for r in rows]
+        rows = self._model.instance_types.scan()
+        instance_types = sorted([row['instance_type'] for row in rows])
 
-        with contextlib.closing(self._conn.cursor()) as cursor:
-            cursor.execute(_SELECT_AVAILABILITY_ZONES)
-            rows = cursor.fetchall()
-        availability_zones = [r['api_name'] for r in rows]
-        regions = sorted(list(set([i[:-1] for i in availability_zones])))
+        rows = self._model.regions.scan()
+        regions = sorted([row['region'] for row in rows])
+
+        rows = self._model.product_descriptions.scan()
+        product_descriptions = sorted([row['product_description']
+                                       for row in rows])
+
         windows = [1, 3, 8, 15, 30, 60]
 
         self.render('main.html',
+                    asset_env=self._asset_env,
                     gauges_site_id=self._gauges_site_id,
                     data=data,
+                    product_description=product_description,
+                    product_descriptions=product_descriptions,
                     instance_type=instance_type,
                     instance_types=instance_types,
-                    availability_zones=availability_zones,
                     region=region,
                     regions=regions,
                     window=window,

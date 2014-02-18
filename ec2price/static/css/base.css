@@ -1,2 +1,30 @@
 body {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.header {
+  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: 18px;
+}
+
+.brand {
+  padding-bottom: 19px;
+  margin-top: 0;
+  margin-bottom: 0;
+  line-height: 40px;
+}
+
+.brand a {
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 80%;
+  }
+}
+
+.container-narrow > hr {
+  margin: 30px 0;
 }

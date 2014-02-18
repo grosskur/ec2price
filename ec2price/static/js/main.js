@@ -4,7 +4,7 @@ nv.addGraph(function() {
   chart.xAxis
       .axisLabel('Date')
         .tickFormat(function (d) {
-          return d3.time.format('%b %d')(new Date(d));
+          return d3.time.format('%m/%d %H:%M')(new Date(d));
         });
 
   chart.yAxis

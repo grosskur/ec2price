@@ -1,80 +1,120 @@
 """
 Data collector
 """
+import decimal
+import logging
+
+import arrow
 import botocore.session
 
-import contextlib
-import datetime
-import logging
-import uuid
+
+_EXCLUDED_REGION_PREFIXES = ['cn-', 'us-gov-']
+_FMT = 'YYYY-MM-DDTHH:mm:ss.000Z'
 
 
-_FMT = '%Y-%m-%dT%H:%M:%S.000Z'
-
-_SELECT_SPOT_PRICE = """
-select price
-from spot_prices, availability_zones, instance_types
-where spot_prices.availability_zone_id = availability_zones.id
-  and availability_zones.api_name = %s
-  and spot_prices.instance_type_id = instance_types.id
-  and instance_types.api_name = %s
-  and spot_prices.ts = %s
-limit 1
-"""
-_INSERT_SPOT_PRICE = """
-with a as (select id from availability_zones where api_name = %s),
-     i as (select id from instance_types where api_name = %s)
-insert into spot_prices (id, availability_zone_id, instance_type_id, ts, price)
-select %s, a.id, i.id, %s, %s
-from a, i
-"""
-_SELECT_INSTANCE_TYPES = """
-select api_name
-from instance_types
-order by api_name
-"""
-
+logging.getLogger('boto').setLevel(logging.WARN)
 logging.getLogger('botocore').setLevel(logging.WARN)
 logging.getLogger('requests.packages.urllib3').setLevel(logging.WARN)
 
 
-def collect(db_conn, hours):
+def collect(model, hours):
+    row = model.progress.get_item(name='end_time')
+    start_time = arrow.get(row['timestamp'])
+    #logging.debug('window: past %s hours', hours)
+    #start_time = arrow.utcnow().replace(hours=-hours)
+    logging.debug('start time: %s', start_time)
+
+    end_time = arrow.utcnow()
+    logging.debug('end time: %s', end_time)
+
+    all_regions = set()
+    all_product_descriptions = set()
+    all_instance_types = set()
+    all_instance_zones = set()
+
     session = botocore.session.get_session()
     ec2 = session.get_service('ec2')
     operation = ec2.get_operation('DescribeSpotPriceHistory')
 
-    d = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
-    start_time = d.strftime(_FMT)
-
-    with contextlib.closing(db_conn.cursor()) as cursor:
-        cursor.execute(_SELECT_INSTANCE_TYPES)
-        rows = cursor.fetchall()
-    instance_types = [r['api_name'] for r in rows]
-
     for region in ec2.region_names:
-        logging.debug('collecting spot prices from region: %s', region)
-        endpoint = ec2.get_endpoint(region)
-        response, data = operation.call(
-            endpoint,
-            instance_types=instance_types,
-            product_descriptions=['Linux/UNIX'],
-            start_time=start_time,
-        )
-        for i in data.get('spotPriceHistorySet', []):
-            with contextlib.closing(db_conn.cursor()) as cursor:
-                cursor.execute(_SELECT_SPOT_PRICE, [
-                    i['availabilityZone'],
-                    i['instanceType'],
-                    i['timestamp'],
-                ])
-                row = cursor.fetchone()
-                if not row:
-                    logging.debug('inserting spot price: %s', i)
-                    cursor.execute(_INSERT_SPOT_PRICE, [
-                        i['availabilityZone'],
-                        i['instanceType'],
-                        uuid.uuid4(),
-                        i['timestamp'],
-                        i['spotPrice'],
-                    ])
-                    db_conn.commit()
+        if any(region.startswith(x) for x in _EXCLUDED_REGION_PREFIXES):
+            continue
+        all_regions.add(region)
+
+        next_token = None
+        while True:
+            logging.debug('collecting spot prices from region: %s', region)
+            endpoint = ec2.get_endpoint(region)
+            if next_token:
+                response, data = operation.call(
+                    endpoint,
+                    start_time=start_time.format(_FMT),
+                    end_time=end_time.format(_FMT),
+                    next_token=next_token,
+                )
+            else:
+                response, data = operation.call(
+                    endpoint,
+                    start_time=start_time.format(_FMT),
+                )
+            next_token = data.get('NextToken')
+            logging.debug('next_token: %s', next_token)
+            spot_data = data.get('SpotPriceHistory', [])
+
+            #conn = boto.ec2.connect_to_region(r.name)
+            #logging.debug('getting spot prices for region: %s', r.name)
+            #data = conn.get_spot_price_history(start_time=start_time)
+
+            logging.debug('saving %d spot prices for region: %s',
+                          len(spot_data), region)
+            with model.spot_prices.batch_write() as batch:
+                for d in spot_data:
+                    all_product_descriptions.add(d['ProductDescription'])
+                    all_instance_types.add(d['InstanceType'])
+                    all_instance_zones.add((
+                        d['ProductDescription'],
+                        d['InstanceType'],
+                        d['AvailabilityZone'],
+                    ))
+                    batch.put_item(data={
+                        'instance_zone_id': ':'.join([
+                            d['ProductDescription'],
+                            d['InstanceType'],
+                            d['AvailabilityZone'],
+                        ]),
+                        'timestamp': arrow.get(d['Timestamp']).timestamp,
+                        'price': decimal.Decimal(str(d['SpotPrice'])),
+                    })
+            if not next_token:
+                break
+
+    logging.debug('saving %d regions', len(all_regions))
+    with model.regions.batch_write() as batch:
+        for i in all_regions:
+            batch.put_item(data={'region': i})
+
+    logging.debug('saving %d product_descriptions',
+                  len(all_product_descriptions))
+    with model.product_descriptions.batch_write() as batch:
+        for i in all_product_descriptions:
+            batch.put_item(data={'product_description': i})
+
+    logging.debug('saving %d instance_types', len(all_instance_types))
+    with model.instance_types.batch_write() as batch:
+        for i in all_instance_types:
+            batch.put_item(data={'instance_type': i})
+
+    logging.debug('saving %d instance_zones', len(all_instance_zones))
+    with model.instance_zones.batch_write() as batch:
+        for i in all_instance_zones:
+            batch.put_item(data={
+                'instance_id': ':'.join([i[0], i[1]]),
+                'zone': i[2],
+            })
+
+    logging.debug('saving end_time')
+    with model.progress.batch_write() as batch:
+        batch.put_item(data={
+            'name': 'end_time',
+            'timestamp': end_time.timestamp,
+        })

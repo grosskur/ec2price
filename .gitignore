@@ -4,3 +4,6 @@
 .venv
 .vagrant
 *.bak*
+.webassets-cache/
+.webassets-manifest
+ec2price/static/gen/
