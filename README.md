@@ -21,6 +21,7 @@ $ heroku config:set TABLE_PREFIX=$(uuidgen | cut -c 1-8 | tr 'A-Z' 'a-z')
 $ heroku config:set COOKIE_SECRET=$(head /dev/urandom | base64 | cut -c 1-40)
 $ heroku config:set AWS_ACCESS_KEY_ID=...
 $ heroku config:set AWS_SECRET_ACCESS_KEY=...
+$ heroku config:set DEBUG=1  # XXX: Minified nvd3 seems to cause a problem
 $ git push heroku master
 $ heroku ps:scale web=1
 $ heroku addons:add scheduler
