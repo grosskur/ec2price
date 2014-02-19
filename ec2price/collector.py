@@ -19,9 +19,11 @@ logging.getLogger('requests.packages.urllib3').setLevel(logging.WARN)
 
 def collect(model, hours):
     row = model.progress.get_item(name='end_time')
-    start_time = arrow.get(row['timestamp'])
-    #logging.debug('window: past %s hours', hours)
-    #start_time = arrow.utcnow().replace(hours=-hours)
+    if row['timestamp'] is None:
+        logging.debug('using initial window of -%d hours', hours)
+        start_time = arrow.utcnow().replace(hours=-hours)
+    else:
+        start_time = arrow.get(row['timestamp'])
     logging.debug('start time: %s', start_time)
 
     end_time = arrow.utcnow()
