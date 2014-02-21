@@ -9,8 +9,6 @@
     {% for u in asset_env['css_screen'].urls() %}
     <link href="{{ static_url(u) }}" rel="stylesheet">
     {% end %}
-  </head>
-  <body>
     {% if ga_tracking_id is not None and ga_domain is not None %}
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -24,6 +22,8 @@
 
     </script>
     {% end %}
+  </head>
+  <body>
     {% block content %}
     {% end %}
     {% for u in asset_env['js_app'].urls() %}
