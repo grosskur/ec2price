@@ -14,10 +14,18 @@ logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, model, asset_env, gauges_site_id):
+    def initialize(self, model, asset_env, gauges_site_id,
+                   google_verification_id):
         self._model = model
         self._asset_env = asset_env
         self._gauges_site_id = gauges_site_id
+        self._google_verification_id = google_verification_id
+
+
+class GoogleVerificationHandler(BaseHandler):
+    def get(self):
+        self.write('google-site-verification: google{}.html'.format(
+            self._google_verification_id))
 
 
 class HealthCheckHandler(BaseHandler):
