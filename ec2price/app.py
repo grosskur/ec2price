@@ -67,6 +67,8 @@ def main(args):
         cookie_secret = os.getenv('COOKIE_SECRET')
         table_prefix = os.getenv('TABLE_PREFIX')
         gauges_site_id = os.getenv('GAUGES_SITE_ID')
+        ga_tracking_id = os.getenv('GA_TRACKING_ID')
+        ga_domain = os.getenv('GA_DOMAIN')
         google_verification_id = os.getenv('GOOGLE_VERIFICATION_ID')
 
         if not table_prefix:
@@ -82,6 +84,8 @@ def main(args):
             'model': Model(table_prefix),
             'asset_env': asset_env,
             'gauges_site_id': gauges_site_id,
+            'ga_tracking_id': ga_tracking_id,
+            'ga_domain': ga_domain,
             'google_verification_id': google_verification_id,
         }
         handlers = [
