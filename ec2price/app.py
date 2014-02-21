@@ -10,7 +10,7 @@ import tornado.ioloop
 import tornado.web
 import webassets.loaders
 
-from .web import MainHandler
+from .web import MainHandler, HealthCheckHandler
 from .collector import collect
 from .model import Model
 
@@ -84,6 +84,7 @@ def main(args):
         }
         handlers = [
             (r'/', MainHandler, params),
+            (r'/healthcheck', HealthCheckHandler, params),
         ]
         _start_tornado_app(debug, cookie_secret, port, address, handlers)
     elif opts.cmd == 'collector':

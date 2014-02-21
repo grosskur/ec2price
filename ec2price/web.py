@@ -20,6 +20,11 @@ class BaseHandler(tornado.web.RequestHandler):
         self._gauges_site_id = gauges_site_id
 
 
+class HealthCheckHandler(BaseHandler):
+    def get(self):
+        self.write('OK')
+
+
 class MainHandler(BaseHandler):
     def get(self):
         product_description = self.get_argument('product', 'Linux/UNIX')
