@@ -15,19 +15,13 @@ logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 class BaseHandler(tornado.web.RequestHandler):
     def initialize(self, model, asset_env, gauges_site_id, ga_tracking_id,
-                   ga_domain, google_verification_id):
+                   ga_domain, google_site_verification_id):
         self._model = model
         self._asset_env = asset_env
         self._gauges_site_id = gauges_site_id
         self._ga_tracking_id = ga_tracking_id
         self._ga_domain = ga_domain
-        self._google_verification_id = google_verification_id
-
-
-class GoogleVerificationHandler(BaseHandler):
-    def get(self):
-        self.write('google-site-verification: google{}.html'.format(
-            self._google_verification_id))
+        self._google_site_verification_id = google_site_verification_id
 
 
 class HealthCheckHandler(BaseHandler):
@@ -84,17 +78,20 @@ class MainHandler(BaseHandler):
 
         windows = [1, 3, 8, 15, 30, 60]
 
-        self.render('main.html',
-                    asset_env=self._asset_env,
-                    gauges_site_id=self._gauges_site_id,
-                    ga_tracking_id=self._ga_tracking_id,
-                    ga_domain=self._ga_domain,
-                    data=data,
-                    product_description=product_description,
-                    product_descriptions=product_descriptions,
-                    instance_type=instance_type,
-                    instance_types=instance_types,
-                    region=region,
-                    regions=regions,
-                    window=window,
-                    windows=windows)
+        self.render(
+            'main.html',
+            asset_env=self._asset_env,
+            gauges_site_id=self._gauges_site_id,
+            ga_tracking_id=self._ga_tracking_id,
+            ga_domain=self._ga_domain,
+            google_site_verification_id=self._google_site_verification_id,
+            data=data,
+            product_description=product_description,
+            product_descriptions=product_descriptions,
+            instance_type=instance_type,
+            instance_types=instance_types,
+            region=region,
+            regions=regions,
+            window=window,
+            windows=windows,
+        )

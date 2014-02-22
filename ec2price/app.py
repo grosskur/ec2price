@@ -10,7 +10,7 @@ import tornado.ioloop
 import tornado.web
 import webassets.loaders
 
-from .web import MainHandler, HealthCheckHandler, GoogleVerificationHandler
+from .web import MainHandler, HealthCheckHandler
 from .collector import collect
 from .model import Model
 
@@ -69,7 +69,7 @@ def main(args):
         gauges_site_id = os.getenv('GAUGES_SITE_ID')
         ga_tracking_id = os.getenv('GA_TRACKING_ID')
         ga_domain = os.getenv('GA_DOMAIN')
-        google_verification_id = os.getenv('GOOGLE_VERIFICATION_ID')
+        google_site_verification_id = os.getenv('GOOGLE_SITE_VERIFICATION_ID')
 
         if not table_prefix:
             parser.error('TABLE_PREFIX is required')
@@ -86,18 +86,12 @@ def main(args):
             'gauges_site_id': gauges_site_id,
             'ga_tracking_id': ga_tracking_id,
             'ga_domain': ga_domain,
-            'google_verification_id': google_verification_id,
+            'google_site_verification_id': google_site_verification_id,
         }
         handlers = [
             (r'/', MainHandler, params),
             (r'/healthcheck', HealthCheckHandler, params),
         ]
-        if google_verification_id:
-            handlers += [
-                (r'/google{}.html'.format(google_verification_id),
-                 GoogleVerificationHandler, params),
-            ]
-
         _start_tornado_app(debug, cookie_secret, port, address, handlers)
     elif opts.cmd == 'collector':
         table_prefix = os.getenv('TABLE_PREFIX')
