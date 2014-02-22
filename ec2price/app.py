@@ -5,6 +5,7 @@ import argparse
 import logging
 import os
 import re
+import time
 
 import tornado.ioloop
 import tornado.web
@@ -27,6 +28,7 @@ DATABASE_URL_REGEX = re.compile(
     '/(?P<dbname>.+)'
 )
 _HOURS = 1
+_COLLECTOR_SLEEP_TIME = 600
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -57,6 +59,8 @@ def main(args):
 
     p_collector = subparsers.add_parser('collector', help='collector')
     p_collector.set_defaults(cmd='collector')
+    p_collector.add_argument('--once', action='store_true',
+                             help='run once instead of indefinitely')
 
     opts = parser.parse_args(args)
 
@@ -69,7 +73,8 @@ def main(args):
         gauges_site_id = _consume_env('GAUGES_SITE_ID')
         ga_tracking_id = _consume_env('GA_TRACKING_ID')
         ga_domain = _consume_env('GA_DOMAIN')
-        google_site_verification_id = _consume_env('GOOGLE_SITE_VERIFICATION_ID')
+        google_site_verification_id = _consume_env(
+            'GOOGLE_SITE_VERIFICATION_ID')
         static_host = _consume_env('STATIC_HOST')
 
         if not table_prefix:
@@ -97,20 +102,30 @@ def main(args):
         _start_tornado_app(debug, cookie_secret, port, address, handlers)
     elif opts.cmd == 'collector':
         table_prefix = _consume_env('TABLE_PREFIX')
-        hours = _consume_env('HOURS')
+        hours = _consume_env('HOURS', _HOURS)
+        collector_sleep_time = _consume_env('COLLECTOR_SLEEP_TIME',
+                                            _COLLECTOR_SLEEP_TIME)
 
         if not table_prefix:
             parser.error('TABLE_PREFIX is required')
 
-        if not hours:
-            hours = _HOURS
         try:
             hours = int(hours)
         except ValueError:
             parser.error('HOURS must be an integer')
 
+        try:
+            collector_sleep_time = int(collector_sleep_time)
+        except ValueError:
+            parser.error('COLLECTOR_SLEEP_TIME must be an integer')
+
         model = Model(table_prefix)
-        collect(model, hours)
+        while True:
+            collect(model, hours)
+            if opts.once:
+                break
+            logging.debug('sleeping %d seconds', collector_sleep_time)
+            time.sleep(collector_sleep_time)
     return 0
 
 
