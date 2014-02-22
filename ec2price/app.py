@@ -70,6 +70,7 @@ def main(args):
         ga_tracking_id = os.getenv('GA_TRACKING_ID')
         ga_domain = os.getenv('GA_DOMAIN')
         google_site_verification_id = os.getenv('GOOGLE_SITE_VERIFICATION_ID')
+        static_host = os.getenv('STATIC_HOST')
 
         if not table_prefix:
             parser.error('TABLE_PREFIX is required')
@@ -87,6 +88,7 @@ def main(args):
             'ga_tracking_id': ga_tracking_id,
             'ga_domain': ga_domain,
             'google_site_verification_id': google_site_verification_id,
+            'static_host': static_host,
         }
         handlers = [
             (r'/', MainHandler, params),

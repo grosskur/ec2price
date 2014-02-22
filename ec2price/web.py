@@ -15,13 +15,35 @@ logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 class BaseHandler(tornado.web.RequestHandler):
     def initialize(self, model, asset_env, gauges_site_id, ga_tracking_id,
-                   ga_domain, google_site_verification_id):
+                   ga_domain, google_site_verification_id, static_host):
         self._model = model
         self._asset_env = asset_env
         self._gauges_site_id = gauges_site_id
         self._ga_tracking_id = ga_tracking_id
         self._ga_domain = ga_domain
         self._google_site_verification_id = google_site_verification_id
+        self.static_host = static_host
+
+    def static_url(self, path, include_host=None, **kwargs):
+        self.require_setting('static_path', 'static_url')
+        get_url = self.settings.get(
+            'static_handler_class',
+            tornado.web.StaticFileHandler,
+        ).make_static_url
+
+        if include_host is None:
+            include_host = getattr(self, 'include_host', False)
+
+        static_host = getattr(self, 'static_host', None)
+
+        if static_host:
+            base = self.request.protocol + "://" + static_host
+        elif include_host:
+            base = self.request.protocol + "://" + self.request.host
+        else:
+            base = ""
+
+        return base + get_url(self.settings, path, **kwargs)
 
 
 class HealthCheckHandler(BaseHandler):
