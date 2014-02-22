@@ -24,7 +24,7 @@ $ heroku config:set AWS_SECRET_ACCESS_KEY=...
 $ git push heroku master
 $ heroku ps:scale web=1
 $ heroku addons:add scheduler
-$ heroku addons:open scheduler  # Add hourly job to run "scripts/ec2price collector --once"
+$ heroku addons:open scheduler  # Add hourly job: "scripts/ec2price collector --once"
 ```
 
 ## To do
