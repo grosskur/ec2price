@@ -61,16 +61,16 @@ def main(args):
     opts = parser.parse_args(args)
 
     if opts.cmd == 'web':
-        debug = bool(os.getenv('DEBUG', False))
-        port = int(os.getenv('PORT', 8080))
-        address = os.getenv('ADDRESS', '')
-        cookie_secret = os.getenv('COOKIE_SECRET')
-        table_prefix = os.getenv('TABLE_PREFIX')
-        gauges_site_id = os.getenv('GAUGES_SITE_ID')
-        ga_tracking_id = os.getenv('GA_TRACKING_ID')
-        ga_domain = os.getenv('GA_DOMAIN')
-        google_site_verification_id = os.getenv('GOOGLE_SITE_VERIFICATION_ID')
-        static_host = os.getenv('STATIC_HOST')
+        debug = bool(_consume_env('DEBUG', False))
+        port = int(_consume_env('PORT', 8080))
+        address = _consume_env('ADDRESS', '')
+        cookie_secret = _consume_env('COOKIE_SECRET')
+        table_prefix = _consume_env('TABLE_PREFIX')
+        gauges_site_id = _consume_env('GAUGES_SITE_ID')
+        ga_tracking_id = _consume_env('GA_TRACKING_ID')
+        ga_domain = _consume_env('GA_DOMAIN')
+        google_site_verification_id = _consume_env('GOOGLE_SITE_VERIFICATION_ID')
+        static_host = _consume_env('STATIC_HOST')
 
         if not table_prefix:
             parser.error('TABLE_PREFIX is required')
@@ -96,8 +96,8 @@ def main(args):
         ]
         _start_tornado_app(debug, cookie_secret, port, address, handlers)
     elif opts.cmd == 'collector':
-        table_prefix = os.getenv('TABLE_PREFIX')
-        hours = os.getenv('HOURS')
+        table_prefix = _consume_env('TABLE_PREFIX')
+        hours = _consume_env('HOURS')
 
         if not table_prefix:
             parser.error('TABLE_PREFIX is required')
@@ -127,3 +127,11 @@ def _start_tornado_app(debug, cookie_secret, port, address, handlers):
     logging.info('listening on port: %d', port)
     app.listen(port, address)
     tornado.ioloop.IOLoop.instance().start()
+
+
+def _consume_env(name, default=None):
+    value = os.getenv(name, default)
+    os.unsetenv(name)
+    if name in os.environ:
+        del os.environ[name]
+    return value
