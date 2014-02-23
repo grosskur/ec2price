@@ -137,6 +137,7 @@ def _start_tornado_app(debug, cookie_secret, port, address, handlers):
         xsrf_cookies=False,
         autoescape='xhtml_escape',
         debug=debug,
+        gzip=not debug,
     )
     app = tornado.web.Application(handlers, **settings)
     logging.info('listening on port: %d', port)
