@@ -6,6 +6,7 @@ import logging
 
 import arrow
 import botocore.session
+import boto.dynamodb2.exceptions
 
 
 _EXCLUDED_REGION_PREFIXES = ['cn-', 'us-gov-']
@@ -18,8 +19,12 @@ logging.getLogger('requests.packages.urllib3').setLevel(logging.WARN)
 
 
 def collect(model, hours):
-    row = model.progress.get_item(name='end_time')
-    if row['timestamp'] is None:
+    try:
+        row = model.progress.get_item(name='end_time')
+    except boto.dynamodb2.exceptions.ItemNotFound:
+        row = None
+
+    if row is None or row['timestamp'] is None:
         logging.debug('using initial window of -%d hours', hours)
         start_time = arrow.utcnow().replace(hours=-hours)
     else:
