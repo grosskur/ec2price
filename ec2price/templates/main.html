@@ -92,6 +92,8 @@ $(function() {
   nv.addGraph(function() {  
     var chart = nv.models.lineChart();
 
+    chart.interpolate('step-before');
+
     chart.xAxis
         .axisLabel('Date')
         .tickFormat(function (d) {
