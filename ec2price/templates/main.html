@@ -90,7 +90,9 @@ function prices() {
 
 $(function() {
   nv.addGraph(function() {  
-    var chart = nv.models.scatterChart();
+    var chart = nv.models.lineWithFocusChart();
+
+    chart.interpolate('step-before');
 
     chart.xAxis
         .axisLabel('Date')
@@ -99,6 +101,16 @@ $(function() {
         });
 
     chart.yAxis
+        .axisLabel('Price ($)')
+        .tickFormat(d3.format('.03f'));
+
+    chart.x2Axis
+        .axisLabel('Date')
+        .tickFormat(function (d) {
+          return d3.time.format('%m/%d %H:%M')(new Date(d));
+        });
+
+    chart.y2Axis
         .axisLabel('Price ($)')
         .tickFormat(d3.format('.03f'));
 

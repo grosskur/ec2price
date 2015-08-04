@@ -55,20 +55,26 @@ class MainHandler(BaseHandler):
     def get(self):
         product_description = self.get_argument('product', 'Linux/UNIX')
         instance_type = self.get_argument('type', 't1.micro')
-        region = self.get_argument('region', 'us-east-1')
+        region = self.get_argument('region', 'All')
         window = int(self.get_argument('window', 3))
 
         logging.debug('window: past %s days', window)
         timestamp = arrow.utcnow().replace(days=-window).timestamp
         logging.debug('timestamp: %s', timestamp)
 
-        rows = self._model.instance_zones.query(
-            instance_id__eq=':'.join([
-                product_description,
-                instance_type,
-            ]),
-            zone__beginswith=region,
-        )
+        instance_id = ':'.join([ product_description, instance_type, ])
+
+        # If the 'All' region is selected, replace it with a blank string so
+        # that the query returns all regions.
+        if region == 'All':
+            rows = self._model.instance_zones.query(
+                instance_id__eq = instance_id
+            )
+        else:
+            rows = self._model.instance_zones.query(
+                instance_id__eq = instance_id,
+                zone__beginswith = region
+            )
         zones = [str(row['zone']) for row in rows]
 
         data = {}
@@ -92,7 +98,7 @@ class MainHandler(BaseHandler):
         instance_types = sorted([row['instance_type'] for row in rows])
 
         rows = self._model.regions.scan()
-        regions = sorted([row['region'] for row in rows])
+        regions = sorted([row['region'] for row in rows]) + ['All']
 
         rows = self._model.product_descriptions.scan()
         product_descriptions = sorted([row['product_description']
