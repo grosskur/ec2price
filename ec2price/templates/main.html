@@ -91,7 +91,9 @@ function prices() {
 $(function() {
   nv.addGraph(function() {  
     var chart = nv.models.scatterChart();
-
+    
+    chart.useVoronoi(false);
+    
     chart.xAxis
         .axisLabel('Date')
         .tickFormat(function (d) {
