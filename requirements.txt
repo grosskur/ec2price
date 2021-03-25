@@ -1,4 +1,4 @@
-PyYAML==3.11
+PyYAML==5.4
 arrow==0.4.2
 backports.ssl-match-hostname==3.4.0.2
 boto==2.27.0
